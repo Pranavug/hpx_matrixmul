@@ -43,7 +43,7 @@ int hpx_main(hpx::program_options::variables_map& vm)
     for(int i=0;i<n;i++)
     {
         a[i].resize(m);
-        hpx::parallel::generate(hpx::parallel::execution::seq,
+        hpx::parallel::generate(hpx::parallel::execution::par,
             std::begin(a[i]), std::end(a[i]), &rand_wrapper);
 
     }
@@ -64,7 +64,7 @@ int hpx_main(hpx::program_options::variables_map& vm)
     {
         b[i].resize(m);
         if(!is_unit)
-        hpx::parallel::generate(hpx::parallel::execution::seq,
+        hpx::parallel::generate(hpx::parallel::execution::par,
             std::begin(b[i]), std::end(b[i]), &rand_wrapper);
     }
 
@@ -93,22 +93,24 @@ int hpx_main(hpx::program_options::variables_map& vm)
         }
     }
 
-    hpx::future<std::int64_t> temp[n][m];
+    std::vector<hpx::future<std::int64_t> > temp;
+    temp.resize(n*m);
 
     for(int i=0;i<n;i++)
     {
         for(int j=0;j<m;j++)
         {
-            temp[i][j]=hpx::async(vector_multiply,a[i],b[j]);
+            temp[i*m+j]=hpx::async(vector_multiply,a[i],b[j]);
         }
     }
 
+    auto an=hpx::util::unwrap(temp);
     hpx::cout<<"\nMultiplied matrix is :\n";
     for(int i=0;i<n;i++)
     {
         for(int j=0;j<m;j++)
         {
-            hpx::cout<<temp[i][j].get()<<" ";
+            hpx::cout<<an[i*m+j]<<" ";
         }
         hpx::cout<<"\n";
     }
